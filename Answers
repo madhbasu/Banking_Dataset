@@ -1,0 +1,125 @@
+select * from accounts;
+select * from customer_accounts
+select * from customers
+select * from employees
+select * from products
+select * from transactions;
+
+--1) Fetch the transaction id, date and amount of all debit transactions.
+select transaction_id,transaction_date,transaction_amount
+from transactions
+where credit_debit_flag='D';
+
+--2) Fetch male employees who earn more than 5000 salary.
+select *
+from employees
+where gender='M'
+and salary > 5000
+
+3) Fetch employees whose name starts with J or whose salary is greater than or equal to 7000.
+select * from employees
+where emp_name like 'J%'
+or salary >= 7000
+
+4) Fetch accounts with balance in between 1000 to 3000
+select *
+from accounts
+where balance between 1000 and 2000;
+
+5) Using SQL, find out if a given number is even or odd ? (Given numbers are 432, 77)
+
+select case when 432%2=0
+then 'odd' else 'even'
+end as odd_even
+
+6) Find customers who did not provide a phone no.
+select *
+from customers
+where phone is null;
+
+7) Find all the different products purchased by the customers.
+select distinct prod_name
+from products p
+join customer_accounts ca
+on ca.prod_id=p.prod_id
+join customers c
+on c.customer_id=ca.customer_id
+
+8) Sort all the active accounts based on highest balance and based on the earliest opening date.
+
+select *
+from accounts
+where account_status='Active'
+order by balance desc,date_of_opening
+
+9) Fetch the oldest 5 transactions.
+
+select * from
+(select *,
+row_number() over(order by transaction_date) as rnk
+from transactions) x
+where x.rnk <=5
+
+10) Find customers who are either from Bangalore/Chennai 
+and their phone number is available OR those who were born before 1990.
+
+select *
+from customers
+where address in ('Bangalore','Chennai')
+and phone is not null
+or (extract(year from dob) < '1990')
+
+11) Find total no of transactions in Nov 2024.
+
+select count(*)
+from transactions
+where to_char(transaction_date,'YYYY-MM') = '2024-11'
+
+12) How total no of products purchased by customer "Satya Sharma".
+with cte as
+(select count(*) as no_of_products,concat(c.first_name,' ',c.last_name) as customer_name
+from products p 
+join customer_accounts ca
+on p.prod_id=ca.prod_id
+join customers c
+on c.customer_id=ca.customer_id
+group by c.first_name,c.last_name)
+select no_of_products,customer_name
+from cte
+where customer_name = 'Satya Sharma'
+
+13) Display the full names of all employees and customers.
+
+select emp_name as employee_name from employees
+union all
+select concat(first_name,' ',last_name) as customer_name from customers
+
+14) Categorise accounts based on their balance.
+select *,
+case when x.bucket = 1 then 'good balance'
+     when x.bucket = 2 then 'average balance'
+     when x.bucket = 3 then 'below_average' end as balance_category
+from
+(select *,
+ntile(3) over(order by balance desc) as bucket
+from accounts) x
+
+15) Find the total balance of all savings account.
+select prod_name as product_name,sum(balance) as total_balance
+from products p
+join customer_accounts ca
+on p.prod_id=ca.prod_id
+join accounts a
+on a.account_no=ca.account_no
+where lower(prod_name)='savings account'
+group by prod_name
+
+--Find balance for each customer
+select concat(c.first_name,' ',c.last_name) as customer_name, sum(a.balance) as total_balance
+from customers c
+join customer_accounts ca
+on c.customer_id=ca.customer_id
+join accounts a
+on a.account_no=ca.account_no
+group by c.first_name,c.last_name
+
